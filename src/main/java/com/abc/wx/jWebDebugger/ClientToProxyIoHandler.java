@@ -1,5 +1,7 @@
 package com.abc.wx.jWebDebugger;
 
+import static com.abc.wx.jWebDebugger.SessionAttachment.KEY_ATTACHMENT;
+
 import java.net.SocketAddress;
 
 import org.apache.mina.core.RuntimeIoException;
@@ -32,12 +34,12 @@ public class ClientToProxyIoHandler extends AbstractProxyIoHandler {
         connector.connect(proxyServerAddress).addListener(new IoFutureListener<ConnectFuture>() {
             public void operationComplete(ConnectFuture future) {
                 try {
-                    future.getSession().setAttribute(OTHER_IO_SESSION, session);
-                    session.setAttribute(OTHER_IO_SESSION, future.getSession());
+                	long now = System.nanoTime();
+                    future.getSession().setAttribute(KEY_ATTACHMENT, new SessionAttachment(session, now + ".server"));
+                    session.setAttribute(KEY_ATTACHMENT, new SessionAttachment(future.getSession(), now + ".client"));
                     future.getSession().resumeRead();
                     future.getSession().resumeWrite();
                 } catch (RuntimeIoException e) {
-                    // Connect failed
                     session.close(true);
                 } finally {
                     session.resumeRead();

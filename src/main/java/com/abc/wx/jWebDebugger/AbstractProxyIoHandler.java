@@ -1,7 +1,12 @@
 package com.abc.wx.jWebDebugger;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import lombok.Cleanup;
 import lombok.extern.log4j.Log4j;
 
 import org.apache.commons.io.FileUtils;
@@ -11,6 +16,8 @@ import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.abc.wx.jWebDebugger.SessionAttachment.KEY_ATTACHMENT;
  
 /**
  * Base class of {@link org.apache.mina.core.service.IoHandler} classes which handle proxied connections.
@@ -19,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractProxyIoHandler extends IoHandlerAdapter {
     
     public static final String OTHER_IO_SESSION = "OTHER_IO_SESSION";
+    public static final String SESSION_NAME = "SESSION_NAME";
       
     @Override
     public void sessionCreated(IoSession session) throws Exception {
@@ -28,11 +36,11 @@ public abstract class AbstractProxyIoHandler extends IoHandlerAdapter {
  
     @Override
     public void sessionClosed(IoSession session) throws Exception {
-        if (session.getAttribute(OTHER_IO_SESSION) != null) {
-            IoSession sess = (IoSession) session.getAttribute(OTHER_IO_SESSION);
-            sess.setAttribute(OTHER_IO_SESSION, null);
-            sess.close(false);
-            session.setAttribute(OTHER_IO_SESSION, null);
+    	SessionAttachment attachment = (SessionAttachment) session.getAttribute(KEY_ATTACHMENT);
+        if (attachment != null) {
+        	session.setAttribute(KEY_ATTACHMENT, null);
+        	attachment.getTheOtherIoSession().close(false);
+        	attachment.destroy();
         }
     }
  
@@ -43,10 +51,17 @@ public abstract class AbstractProxyIoHandler extends IoHandlerAdapter {
         rb.mark();
         wb.put(rb);
         wb.flip();
-        ((IoSession) session.getAttribute(OTHER_IO_SESSION)).write(wb);
+        SessionAttachment attachment = (SessionAttachment) session.getAttribute(KEY_ATTACHMENT);
+        attachment.getTheOtherIoSession().write(wb);
         rb.reset();
         try {
-        	FileUtils.copyInputStreamToFile(rb.asInputStream(), FileUtils.getFile("D:\\test\\wx", System.nanoTime() + ".txt"));
+        	File file = FileUtils.getFile("D:\\test\\wx", attachment.getSessionName() + ".txt");
+        	FileUtils.write
+//        	@Cleanup
+//        	InputStream input = rb.asInputStream();
+//        	@Cleanup
+//        	OutputStream output = new FileOutputStream(, true);
+//        	IOUtils.copy(input, output);
         } catch (Exception e) {
         	log.error(e.getMessage(), e);
         }
