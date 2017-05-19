@@ -55,8 +55,6 @@ public abstract class AbstractProxyIoHandler extends IoHandlerAdapter {
         attachment.getTheOtherIoSession().write(wb);
         rb.reset();
         try {
-        	File file = FileUtils.getFile("D:\\test\\wx", attachment.getSessionName() + ".txt");
-        	FileUtils.write
 //        	@Cleanup
 //        	InputStream input = rb.asInputStream();
 //        	@Cleanup
